@@ -1,0 +1,130 @@
+#!/bin/bash
+
+help=$'
+usage: generate-tar [OPTION] <FILE>...
+
+Options:
+   -i, --image <file>     image file (for example: image-bios.bin)
+   -k, --key <dir>        private key dir (for example: ~/.ssh/id_rsa)
+   -v, --version          bios version
+   -h, --help             Display this help text and exit.
+'
+
+private_key=$'-----BEGIN PRIVATE KEY-----
+MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAPvSDLu6slkP1gri
+PaeQXL9ysD69J/HjbBCIQ0RPfeWBb75US1tRTjPP0Ub8CtH8ExVf8iF1ulsZA78B
+zIjBYZVp9pyD6LbpZ/hjV7rIH6dTNhoVpdA+F8LzmQ7cyhHG8l2JMvdunwF2uX5k
+D4WDcZt/ITKZNQNavPtmIyD5HprdAgMBAAECgYEAuQkTSi5ZNpAoWz76xtGRFSwU
+zUT4wQi3Mz6tDtjKTYXasiQGa0dHC1M9F8fDu6BZ9W7W4Dc9hArRcdzEighuxoI/
+nZI/0uL89iUEywnDEIHuS6D5JlZaj86/nx9YvQnO8F/seM+MX0EAWVrd5wC7aAF1
+h6Fu7ykZB4ggUjQAWwECQQD+AUiDOEO+8btLJ135dQfSGc5VFcZiequnKWVm6uXt
+rX771hEYjYMjLqWGFg9G4gE3GuABM5chMINuQQUivy8tAkEA/cxfy19XkjtqcMgE
+x/UDt6Nr+Ky/tk+4Y65WxPRDas0uxFOPk/vEjgVmz1k/TAy9G4giisluTvtmltr5
+DCLocQJBAJnRHx9PiD7uVhRJz6/L/iNuOzPtTsi+Loq5F83+O6T15qsM1CeBMsOw
+cM5FN5UeMcwz+yjfHAsePMkcmMaU7jUCQHlg9+N8upXuIo7Dqj2zOU7nMmkgvSNE
+5yuNImRZabC3ZolwaTdd7nf5r1y1Eyec5Ag5yENV6JKPe1Xkbb1XKJECQDngA0h4
+6ATvfP1Vrx4CbP11eKXbCsZ9OGPHSgyvVjn68oY5ZP3uPsIattoN7dE2BRfuJm7m
+F0nIdUAhR0yTfKM=
+-----END PRIVATE KEY-----
+'
+
+curtime=`date +%Y%m%d%H%M`
+VERSION=""
+image_file=""
+private_key_path=""
+
+public_key="publickey"
+public_key_sig="publickey.sig"
+image_bios="image-bios"
+image_bios_sig="image-bios.sig"
+manifest="MANIFEST"
+manifest_sig="MANIFEST.sig"
+image_bios_tar="image-bios-"$curtime".tar"
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -i|--image)
+      image_file="$2"
+      shift 2
+      ;;
+    -k|--key)
+	  if [[ ! -z "${2}"  && "${2}" != -* ]]; then
+        private_key_path="$2"
+        shift 2
+      else
+        shift 1
+      fi
+	  ;;
+    -v|--version)
+	  echo $2
+      VERSION="$2"
+      shift 2
+      ;;
+    -h|--help)
+      echo "$help"
+      exit
+      ;;
+  esac
+done
+
+if [ ! -f "${image_file}" ];then
+	echo "bios image file is no exist"
+	exit
+fi
+
+if [ -e "${VERSION}" ];then
+	echo "bios version is null"
+	exit
+fi
+
+function create_sig() {
+	openssl dgst -sha256 -sign ${private_key_path} -out $2 $1
+}
+
+function create_publickey() {
+	if [ -z "$private_key_path" ];then
+		private_key_path="private_key_tmp_path"
+		echo -e "${private_key}" > ${private_key_path}
+	fi
+
+	openssl pkey -in "${private_key_path}" -pubout -out ${public_key}
+	create_sig ${public_key} ${public_key_sig}
+}
+
+function create_manifest() {
+	echo "purpose=xyz.openbmc_project.Software.Version.VersionPurpose.Host" > ${manifest}
+	echo "version="${VERSION} >> ${manifest}
+	echo "KeyType=OpenBMC" >> ${manifest}
+	echo "HashType=RSA-SHA256" >> ${manifest}
+
+	create_sig ${manifest} ${manifest_sig}
+}
+
+function create_image() {
+	cp ${image_file} ${image_bios}
+	create_sig ${image_bios} ${image_bios_sig}
+}
+
+function create_tar() {
+	tar -zcf ${image_bios_tar} ${public_key} ${public_key_sig} ${image_bios} ${image_bios_sig} ${manifest} ${manifest_sig}
+}
+
+function clean_file() {
+	clean_files="${private_key_path} ${public_key} ${public_key_sig} ${image_bios} ${image_bios_sig} ${manifest} ${manifest_sig}"
+	for file in $clean_files; do
+		rm -rf $file
+	done
+}
+
+function main() {
+	create_publickey
+	create_manifest
+	create_image
+	create_tar
+	clean_file
+
+	echo "generate the bios tar is success..."
+}
+
+main

@@ -1,0 +1,39 @@
+#!/bin/bash
+
+help=$'
+usage: bios-update [OPTION] <FILE>...
+
+Options:
+   -i, --image <file>     image file (for example: image-bios)
+   -h, --help             Display this help text and exit.
+'
+
+image_file=""
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -i|--image)
+      image_file="$2"
+      ;;
+    -h|--help)
+      echo "$help"
+      exit
+      ;;
+  esac
+done
+
+if [ ! -f "${image_file}" ];then
+	echo "bios image file is not exist"
+	exit
+fi
+
+function update() {
+	echo -n master > /sys/bus/platform/drivers/aspeed-hardware-strap/1e6e2070.hwstrap/spi-mode
+	echo 1e630000.spi > /sys/bus/platform/drivers/aspeed-smc/bind
+	flashcp ${image_file} /dev/mtd/bios
+	echo 1e630000.spi > /sys/bus/platform/drivers/aspeed-smc/unbind
+	echo -n pass-through > /sys/bus/platform/drivers/aspeed-hardware-strap/1e6e2070.hwstrap/spi-mode
+}
+
+update
