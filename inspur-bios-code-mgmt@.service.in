@@ -1,0 +1,8 @@
+[Unit]
+Description=Update BIOS
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/sbin/bios-update -i %I
+SyslogIdentifier=image-bios

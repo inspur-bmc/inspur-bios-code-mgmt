@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 help=$'
 usage: generate-tar [OPTION] <FILE>...

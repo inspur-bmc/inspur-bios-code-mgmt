@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 help=$'
 usage: bios-update [OPTION] <FILE>...
@@ -14,7 +14,8 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -i|--image)
-      image_file="$2"
+      image_file="/tmp/images/$2/image-bios"
+      shift 2
       ;;
     -h|--help)
       echo "$help"
@@ -29,7 +30,11 @@ if [ ! -f "${image_file}" ];then
 fi
 
 function update() {
-	echo -n master > /sys/bus/platform/drivers/aspeed-hardware-strap/1e6e2070.hwstrap/spi-mode
+  if [ -e "/dev/mtd/bios" ];then
+    echo 1e630000.spi > /sys/bus/platform/drivers/aspeed-smc/unbind
+	  echo -n pass-through > /sys/bus/platform/drivers/aspeed-hardware-strap/1e6e2070.hwstrap/spi-mode
+  fi
+  echo -n master > /sys/bus/platform/drivers/aspeed-hardware-strap/1e6e2070.hwstrap/spi-mode
 	echo 1e630000.spi > /sys/bus/platform/drivers/aspeed-smc/bind
 	flashcp ${image_file} /dev/mtd/bios
 	echo 1e630000.spi > /sys/bus/platform/drivers/aspeed-smc/unbind
