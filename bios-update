@@ -1,28 +1,6 @@
 #!/bin/sh
 
-help=$'
-usage: bios-update [OPTION] <FILE>...
-
-Options:
-   -i, --image <file>     image file (for example: image-bios)
-   -h, --help             Display this help text and exit.
-'
-
-image_file=""
-
-while [[ $# -gt 0 ]]; do
-  key="$1"
-  case $key in
-    -i|--image)
-      image_file="/tmp/images/$2/image-bios"
-      shift 2
-      ;;
-    -h|--help)
-      echo "$help"
-      exit
-      ;;
-  esac
-done
+image_file="/run/initramfs/image-bios"
 
 if [ ! -f "${image_file}" ];then
 	echo "bios image file is not exist"

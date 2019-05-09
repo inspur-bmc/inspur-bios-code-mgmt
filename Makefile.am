@@ -8,7 +8,8 @@ noinst_HEADERS = \
 	flash.hpp
 
 if HAVE_SYSTEMD
-systemdsystemunit_DATA = inspur-bios-code-mgmt.service
+systemdsystemunit_DATA = inspur-bios-code-mgmt.service \
+						 inspur-bios-updater.service
 endif
 
 sbin_PROGRAMS = \

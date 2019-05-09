@@ -1,0 +1,10 @@
+[Unit]
+Description=Inspur BIOS Updater
+
+[Service]
+Restart=always
+RestartSec=5
+ExecStart=@sbindir@/inspur-bios-updater
+
+[Install]
+WantedBy=multi-user.target

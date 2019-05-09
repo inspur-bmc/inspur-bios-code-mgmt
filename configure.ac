@@ -167,5 +167,5 @@ AC_CHECK_HEADER(sdbusplus/server.hpp, ,[AC_MSG_ERROR([Could not find sdbusplus/s
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([inspur-bios-code-mgmt.service])
-AC_OUTPUT
+AC_CONFIG_FILES([inspur-bios-updater.service])
 AC_OUTPUT
