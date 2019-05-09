@@ -1,8 +1,5 @@
 #include "activation.hpp"
-
-#include "images.hpp"
 #include "item_updater.hpp"
-#include "serialize.hpp"
 
 #include <phosphor-logging/log.hpp>
 #include <sdbusplus/exception.hpp>
@@ -57,7 +54,7 @@ void Activation::unsubscribeFromSystemdSignals()
 
 auto Activation::activation(Activations value) -> Activations
 {
-
+    auto ret = value;
     if ((value != softwareServer::Activation::Activations::Active) &&
         (value != softwareServer::Activation::Activations::Activating))
     {
@@ -69,14 +66,15 @@ auto Activation::activation(Activations value) -> Activations
         parent.freeSpace(*this);
 
         printf("flashWrite...versionId = %s\n", versionId.c_str());
-        // flashWrite();
+        subscribeToSystemdSignals();
+        flashWrite();
 
         auto method = bus.new_method_call(SYSTEMD_BUSNAME, SYSTEMD_PATH,
                                       SYSTEMD_INTERFACE, "StartUnit");
         std::string bios_service;
-        bios_service.append("inspur-bios-code-mgmt@");
-        bios_service.append(versionId);
-        bios_service.append(".service");
+        bios_service.append("inspur-bios-code-mgmt.service");
+        // bios_service.append(versionId);
+        // bios_service.append(".service");
         printf("bios_service = %s\n", bios_service.c_str());
         method.append(bios_service, "replace");
         try
@@ -86,49 +84,11 @@ auto Activation::activation(Activations value) -> Activations
         catch(const std::exception& e)
         {
             printf("start inspur-bios-code-mgmt error...\n");
+            ret = softwareServer::Activation::Activations::Failed;
         }
-        
-        std::string cmd = "ps | grep /usr/sbin/bios-update | grep -v grep | wc -l";
-        while (true)
-        {
-            auto fp = popen(cmd.c_str(), "r");
-            if (fp)
-            {
-                char line[32];
-                printf("popen...........\n");
-                std::fgets(line, sizeof(line) - 1, fp);
-                printf("line = %s\n", line);
-                if (strncmp(line, "0", 1) == 0)
-                {
-                    break;
-                }
-                pclose(fp);
-            }
-        }
-
-        printf("call.................\n");
-        if (!redundancyPriority)
-        {
-            redundancyPriority =
-                std::make_unique<RedundancyPriority>(bus, path, *this, 0);
-        }
-
-        // Remove version object from image manager
-        Activation::deleteImageManagerObject();
-
-        // Create active association
-        parent.createActiveAssociation(path);
-
-        log<level::INFO>("BIOS image ready, need reboot to get activated.");
-        return softwareServer::Activation::activation(
-            softwareServer::Activation::Activations::Active);
     }
-    else
-    {
-        activationBlocksTransition.reset(nullptr);
-        activationProgress.reset(nullptr);
-    }
-    return softwareServer::Activation::activation(value);
+
+    return softwareServer::Activation::activation(ret);
 }
 
 void Activation::deleteImageManagerObject()
@@ -152,10 +112,6 @@ void Activation::deleteImageManagerObject()
 auto Activation::requestedActivation(RequestedActivations value)
     -> RequestedActivations
 {
-    rwVolumeCreated = false;
-    roVolumeCreated = false;
-    ubootEnvVarsUpdated = false;
-
     if ((value == softwareServer::Activation::RequestedActivations::Active) &&
         (softwareServer::Activation::requestedActivation() !=
          softwareServer::Activation::RequestedActivations::Active))
@@ -174,17 +130,12 @@ auto Activation::requestedActivation(RequestedActivations value)
 
 uint8_t RedundancyPriority::priority(uint8_t value)
 {
-    // Set the priority value so that the freePriority() function can order
-    // the versions by priority.
     auto newPriority = softwareServer::RedundancyPriority::priority(value);
-    parent.parent.savePriority(parent.versionId, value);
-    parent.parent.freePriority(value, parent.versionId);
     return newPriority;
 }
 
 uint8_t RedundancyPriority::sdbusPriority(uint8_t value)
 {
-    parent.parent.savePriority(parent.versionId, value);
     return softwareServer::RedundancyPriority::priority(value);
 }
 
@@ -196,29 +147,21 @@ void Activation::unitStateChange(sdbusplus::message::message& msg)
         return;
     }
 
+    if (!redundancyPriority)
+    {
+        redundancyPriority =
+            std::make_unique<RedundancyPriority>(bus, path, *this, 0);
+    }
+
+    unsubscribeFromSystemdSignals();
+
+    // Remove version object from image manager
+    Activation::deleteImageManagerObject();
+
+    // Create active association
+    parent.createActiveAssociation(path);
+
     onStateChanges(msg);
-
-    return;
-}
-
-void ActivationBlocksTransition::enableRebootGuard()
-{
-    log<level::INFO>("BIOS image activating - BIOS reboots are disabled.");
-
-    auto method = bus.new_method_call(SYSTEMD_BUSNAME, SYSTEMD_PATH,
-                                      SYSTEMD_INTERFACE, "StartUnit");
-    method.append("reboot-guard-enable.service", "replace");
-    bus.call_noreply(method);
-}
-
-void ActivationBlocksTransition::disableRebootGuard()
-{
-    log<level::INFO>("BIOS activation has ended - BIOS reboots are re-enabled.");
-
-    auto method = bus.new_method_call(SYSTEMD_BUSNAME, SYSTEMD_PATH,
-                                      SYSTEMD_INTERFACE, "StartUnit");
-    method.append("reboot-guard-disable.service", "replace");
-    bus.call_noreply(method);
 }
 
 } // namespace updater

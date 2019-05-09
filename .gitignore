@@ -40,6 +40,7 @@ Makefile.in
 /config.h
 /config.h.in~
 *.log
+/m4/*.m4
 /config.status
 /inspur-bios-updater
 server.hpp
@@ -48,5 +49,5 @@ error.hpp
 error.cpp
 Makefile
 .deps
-/test/utest
 *-libtool
+/org/openbmc/Associations/

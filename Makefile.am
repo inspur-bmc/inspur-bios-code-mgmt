@@ -2,16 +2,13 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 # Build these headers, don't install them
 noinst_HEADERS = \
-	watch.hpp \
 	version.hpp \
-	images.hpp \
 	item_updater.hpp \
 	activation.hpp \
-	flash.hpp \
-	item_updater_helper.hpp
+	flash.hpp
 
 if HAVE_SYSTEMD
-systemdsystemunit_DATA = inspur-bios-code-mgmt@.service
+systemdsystemunit_DATA = inspur-bios-code-mgmt.service
 endif
 
 sbin_PROGRAMS = \
@@ -28,20 +25,10 @@ CLEANFILES = ${BUILT_SOURCES}
 inspur_bios_updater_SOURCES = \
 	activation.cpp \
 	version.cpp \
-	serialize.cpp \
 	item_updater.cpp \
 	item_updater_main.cpp
 
 include static/Makefile.am.include
-
-if WANT_SIGNATURE_VERIFY_BUILD
-noinst_HEADERS += \
-	image_verify.hpp \
-	utils.hpp
-inspur_bios_updater_SOURCES += \
-	image_verify.cpp \
-	utils.cpp
-endif
 
 nodist_inspur_bios_updater_SOURCES = \
 	org/openbmc/Associations/server.cpp
@@ -79,5 +66,3 @@ org/openbmc/Associations/server.hpp: org/openbmc/Associations.interface.yaml
 
 inspur_bios_updater_CXXFLAGS = $(generic_cxxflags)
 inspur_bios_updater_LDFLAGS = $(generic_ldflags)
-
-SUBDIRS = test

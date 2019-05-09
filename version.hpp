@@ -119,23 +119,6 @@ class Version : public VersionInherit
      */
     static std::string getId(const std::string& version);
 
-    /**
-     * @brief Get the active BMC version string.
-     *
-     * @param[in] releaseFilePath - The path to the file which contains
-     *                              the release version string.
-     *
-     * @return The version string (e.g. v1.99.10-19).
-     */
-    static std::string getBMCVersion(const std::string& releaseFilePath);
-
-    /* @brief Check if this version matches the currently running version
-     *
-     * @return - Returns true if this version matches the currently running
-     *           version.
-     */
-    bool isFunctional();
-
     /** @brief Persistent Delete D-Bus object */
     std::unique_ptr<Delete> deleteObject;
 

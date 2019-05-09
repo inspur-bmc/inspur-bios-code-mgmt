@@ -93,40 +93,6 @@ std::string Version::getId(const std::string& version)
     return (hexId.substr(0, 8));
 }
 
-std::string Version::getBMCVersion(const std::string& releaseFilePath)
-{
-    std::string versionKey = "VERSION_ID=";
-    std::string version{};
-    std::ifstream efile;
-    std::string line;
-    efile.open(releaseFilePath);
-
-    while (getline(efile, line))
-    {
-        if (line.substr(0, versionKey.size()).find(versionKey) !=
-            std::string::npos)
-        {
-            std::size_t pos = line.find_first_of('"') + 1;
-            version = line.substr(pos, line.find_last_of('"') - pos);
-            break;
-        }
-    }
-    efile.close();
-
-    if (version.empty())
-    {
-        log<level::ERR>("Error BIOS current version is empty");
-        elog<InternalFailure>();
-    }
-
-    return version;
-}
-
-bool Version::isFunctional()
-{
-    return versionStr == getBMCVersion(OS_RELEASE_FILE);
-}
-
 void Delete::delete_()
 {
     if (parent.eraseCallback)

@@ -73,16 +73,10 @@ AX_APPEND_COMPILE_FLAGS([-Wall -Werror], [CXXFLAGS])
 
 AC_DEFINE(ACTIVATION_FWD_ASSOCIATION, "inventory", [The name of the activation's forward association.])
 AC_DEFINE(ACTIVATION_REV_ASSOCIATION, "activation", [The name of the activation's reverse association.])
-AC_DEFINE(INVENTORY_PATH, "/xyz/openbmc_project/inventory/",
-    [The inventory path root.])
-AC_DEFINE(BMC_INVENTORY_INTERFACE, "xyz.openbmc_project.Inventory.Item.Bmc",
-    [The BMC inventory interface])
+AC_DEFINE(HOST_INVENTORY_PATH, "/xyz/openbmc_project/inventory/system/chassis", [The host inventory path.])
 
 AC_DEFINE(ACTIVE_FWD_ASSOCIATION, "active", [The name of the active's forward association.])
 AC_DEFINE(ACTIVE_REV_ASSOCIATION, "software_version", [The name of the active's reverse association.])
-
-AC_DEFINE(FUNCTIONAL_FWD_ASSOCIATION, "functional", [The name of the functional forward association.])
-AC_DEFINE(FUNCTIONAL_REV_ASSOCIATION, "software_version", [The functional reverse association.])
 
 AC_ARG_VAR(VERSION_BUSNAME, [The Dbus busname to own])
 AS_IF([test "x$VERSION_BUSNAME" == "x"], [VERSION_BUSNAME="xyz.openbmc_project.Software.Version"])
@@ -91,11 +85,6 @@ AC_DEFINE_UNQUOTED([VERSION_BUSNAME], ["$VERSION_BUSNAME"], [The DBus busname to
 AC_ARG_VAR(SOFTWARE_OBJPATH, [The version software manager Dbus root])
 AS_IF([test "x$SOFTWARE_OBJPATH" == "x"], [SOFTWARE_OBJPATH="/xyz/openbmc_project/software"])
 AC_DEFINE_UNQUOTED([SOFTWARE_OBJPATH], ["$SOFTWARE_OBJPATH"], [The version software manager Dbus root])
-
-AC_ARG_VAR(DOWNLOAD_BUSNAME, [The Dbus busname to own])
-AS_IF([test "x$DOWNLOAD_BUSNAME" == "x"],
-    [DOWNLOAD_BUSNAME="xyz.openbmc_project.Software.Download"])
-AC_DEFINE_UNQUOTED([DOWNLOAD_BUSNAME], ["$DOWNLOAD_BUSNAME"], [The DBus busname to own])
 
 AC_DEFINE([MAPPER_BUSNAME], ["xyz.openbmc_project.ObjectMapper"], [Object mapper bus name])
 AC_DEFINE([MAPPER_INTERFACE], ["xyz.openbmc_project.ObjectMapper"], [Object mapper interface])
@@ -162,13 +151,6 @@ AS_IF([test "x$ACTIVE_BMC_MAX_ALLOWED" == "x"], [ACTIVE_BMC_MAX_ALLOWED=2])
 AC_DEFINE_UNQUOTED([ACTIVE_BMC_MAX_ALLOWED], [$ACTIVE_BMC_MAX_ALLOWED],
     [The maximum allowed active BMC versions])
 
-# setup signature verification
-AC_ARG_ENABLE([verify_signature],
-    AS_HELP_STRING([--enable-verify_signature], [Enable image signature validation.]))
-AS_IF([test "x$enable_verify_signature" == "xyes"], \
-    [AC_DEFINE([WANT_SIGNATURE_VERIFY],[],[Enable image signature validation.])])
-AM_CONDITIONAL([WANT_SIGNATURE_VERIFY_BUILD], [test "x$enable_verify_signature" == "xyes"])
-
 AC_DEFINE(BUSNAME_UPDATER, "xyz.openbmc_project.Software.BIOS.Updater",
     [The item updater DBus busname to own.])
 
@@ -183,7 +165,7 @@ AM_CONDITIONAL([WANT_SYNC], [test "x$enable_sync_bmc_files" == "xyes"])
 AC_CHECK_HEADER(systemd/sd-bus.h, ,[AC_MSG_ERROR([Could not find systemd/sd-bus.h...systemd development package required])])
 AC_CHECK_HEADER(sdbusplus/server.hpp, ,[AC_MSG_ERROR([Could not find sdbusplus/server.hpp...openbmc/sdbusplus package required])])
 
-AC_CONFIG_FILES([Makefile test/Makefile])
-AC_CONFIG_FILES([inspur-bios-code-mgmt@.service])
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([inspur-bios-code-mgmt.service])
 AC_OUTPUT
 AC_OUTPUT

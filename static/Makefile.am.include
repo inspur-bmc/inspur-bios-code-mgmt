@@ -1,3 +1,2 @@
 inspur_bios_updater_SOURCES += \
-	%reldir%/flash.cpp \
-	%reldir%/item_updater_helper.cpp
+	%reldir%/flash.cpp

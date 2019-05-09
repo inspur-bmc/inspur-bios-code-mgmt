@@ -4,5 +4,5 @@ Description=Update BIOS
 [Service]
 Type=oneshot
 RemainAfterExit=no
-ExecStart=/usr/sbin/bios-update -i %I
+ExecStart=/usr/sbin/bios-update
 SyslogIdentifier=image-bios

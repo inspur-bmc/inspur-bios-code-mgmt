@@ -4,7 +4,6 @@
 
 #include "flash.hpp"
 #include "org/openbmc/Associations/server.hpp"
-#include "xyz/openbmc_project/Software/ActivationProgress/server.hpp"
 #include "xyz/openbmc_project/Software/RedundancyPriority/server.hpp"
 
 #include <sdbusplus/server.hpp>
@@ -23,13 +22,8 @@ using AssociationList =
 using ActivationInherit = sdbusplus::server::object::object<
     sdbusplus::xyz::openbmc_project::Software::server::Activation,
     sdbusplus::org::openbmc::server::Associations>;
-using ActivationBlocksTransitionInherit = sdbusplus::server::object::object<
-    sdbusplus::xyz::openbmc_project::Software::server::
-        ActivationBlocksTransition>;
 using RedundancyPriorityInherit = sdbusplus::server::object::object<
     sdbusplus::xyz::openbmc_project::Software::server::RedundancyPriority>;
-using ActivationProgressInherit = sdbusplus::server::object::object<
-    sdbusplus::xyz::openbmc_project::Software::server::ActivationProgress>;
 
 namespace sdbusRule = sdbusplus::bus::match::rules;
 
@@ -109,80 +103,6 @@ class RedundancyPriority : public RedundancyPriorityInherit
     // TODO Remove once openbmc/openbmc#1975 is resolved
     static constexpr auto interface =
         "xyz.openbmc_project.Software.RedundancyPriority";
-    sdbusplus::bus::bus& bus;
-    std::string path;
-};
-
-/** @class ActivationBlocksTransition
- *  @brief OpenBMC ActivationBlocksTransition implementation.
- *  @details A concrete implementation for
- *  xyz.openbmc_project.Software.ActivationBlocksTransition DBus API.
- */
-class ActivationBlocksTransition : public ActivationBlocksTransitionInherit
-{
-  public:
-    /** @brief Constructs ActivationBlocksTransition.
-     *
-     *  @param[in] bus    - The Dbus bus object
-     *  @param[in] path   - The Dbus object path
-     */
-    ActivationBlocksTransition(sdbusplus::bus::bus& bus,
-                               const std::string& path) :
-        ActivationBlocksTransitionInherit(bus, path.c_str(), true),
-        bus(bus), path(path)
-    {
-        std::vector<std::string> interfaces({interface});
-        bus.emit_interfaces_added(path.c_str(), interfaces);
-        enableRebootGuard();
-    }
-
-    ~ActivationBlocksTransition()
-    {
-        std::vector<std::string> interfaces({interface});
-        bus.emit_interfaces_removed(path.c_str(), interfaces);
-        disableRebootGuard();
-    }
-
-  private:
-    // TODO Remove once openbmc/openbmc#1975 is resolved
-    static constexpr auto interface =
-        "xyz.openbmc_project.Software.ActivationBlocksTransition";
-    sdbusplus::bus::bus& bus;
-    std::string path;
-
-    /** @brief Enables a Guard that blocks any BIOS reboot commands */
-    void enableRebootGuard();
-
-    /** @brief Disables any guard that was blocking the BIOS reboot */
-    void disableRebootGuard();
-};
-
-class ActivationProgress : public ActivationProgressInherit
-{
-  public:
-    /** @brief Constructs ActivationProgress.
-     *
-     * @param[in] bus    - The Dbus bus object
-     * @param[in] path   - The Dbus object path
-     */
-    ActivationProgress(sdbusplus::bus::bus& bus, const std::string& path) :
-        ActivationProgressInherit(bus, path.c_str(), true), bus(bus), path(path)
-    {
-        progress(0);
-        std::vector<std::string> interfaces({interface});
-        bus.emit_interfaces_added(path.c_str(), interfaces);
-    }
-
-    ~ActivationProgress()
-    {
-        std::vector<std::string> interfaces({interface});
-        bus.emit_interfaces_removed(path.c_str(), interfaces);
-    }
-
-  private:
-    // TODO Remove once openbmc/openbmc#1975 is resolved
-    static constexpr auto interface =
-        "xyz.openbmc_project.Software.ActivationProgress";
     sdbusplus::bus::bus& bus;
     std::string path;
 };
@@ -300,30 +220,11 @@ class Activation : public ActivationInherit, public Flash
     /** @brief Version id */
     std::string versionId;
 
-    /** @brief Persistent ActivationBlocksTransition dbus object */
-    std::unique_ptr<ActivationBlocksTransition> activationBlocksTransition;
-
     /** @brief Persistent RedundancyPriority dbus object */
     std::unique_ptr<RedundancyPriority> redundancyPriority;
 
-    /** @brief Persistent ActivationProgress dbus object */
-    std::unique_ptr<ActivationProgress> activationProgress;
-
     /** @brief Used to subscribe to dbus systemd signals **/
     sdbusplus::bus::match_t systemdSignals;
-
-    /** @brief Tracks whether the read-write volume has been created as
-     * part of the activation process. **/
-    bool rwVolumeCreated = false;
-
-    /** @brief Tracks whether the read-only volume has been created as
-     * part of the activation process. **/
-    bool roVolumeCreated = false;
-
-    /** @brief Tracks if the service that updates the U-Boot environment
-     *         variables has completed. **/
-    bool ubootEnvVarsUpdated = false;
-
 };
 
 } // namespace updater
