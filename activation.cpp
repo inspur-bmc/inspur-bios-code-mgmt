@@ -65,7 +65,6 @@ auto Activation::activation(Activations value) -> Activations
     {
         parent.freeSpace(*this);
 
-        printf("flashWrite...versionId = %s\n", versionId.c_str());
         subscribeToSystemdSignals();
         flashWrite();
 
@@ -73,9 +72,6 @@ auto Activation::activation(Activations value) -> Activations
                                       SYSTEMD_INTERFACE, "StartUnit");
         std::string bios_service;
         bios_service.append("inspur-bios-code-mgmt.service");
-        // bios_service.append(versionId);
-        // bios_service.append(".service");
-        printf("bios_service = %s\n", bios_service.c_str());
         method.append(bios_service, "replace");
         try
         {
@@ -83,7 +79,6 @@ auto Activation::activation(Activations value) -> Activations
         }
         catch(const std::exception& e)
         {
-            printf("start inspur-bios-code-mgmt error...\n");
             ret = softwareServer::Activation::Activations::Failed;
         }
     }

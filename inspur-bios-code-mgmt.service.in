@@ -4,5 +4,5 @@ Description=Update BIOS
 [Service]
 Type=oneshot
 RemainAfterExit=no
-ExecStart=/usr/sbin/bios-update
+ExecStart=/usr/sbin/inspur-bios-code-mgmt
 SyslogIdentifier=image-bios

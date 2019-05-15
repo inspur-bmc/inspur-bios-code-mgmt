@@ -1,8 +1,0 @@
-[Unit]
-Description=Update BIOS
-
-[Service]
-Type=oneshot
-RemainAfterExit=no
-ExecStart=/usr/sbin/inspur-bios-updater-sh
-SyslogIdentifier=image-bios
